@@ -275,15 +275,37 @@ public:
 		cout << "Count of elements in list:\t" << size << endl;
 		cout << "Common count of elements:\t" << Head->count << endl;
 	}
+
+	void unique() //мне не нравитс€ моЄ решение, оно т€желовесное, € уверен, что можно было бы это сделать гораздо легче.
+	{
+		size_t temp_s = 0; //почему-то € его не могу объ€вить в теле for в качестве еще одной перменной через зап€тую.
+		for (Element* Temp = Head; Temp->pNext; Temp = Temp->pNext, ++temp_s)
+		{
+			size_t temp_s2 = temp_s + 1;
+			for (Element* Temp2 = Temp->pNext; Temp2; Temp2 = Temp2->pNext, ++temp_s2)
+			{
+				if (Temp->Data == Temp2->Data)
+				{
+					erase(temp_s2);
+					return unique(); //без этого он падает.
+				}
+			}
+		}
+	}
+
+	void reverse()
+	{
+
+	}
 };
 
 //#define BASE_CHECK
 //#define DESTRUCTOR_CHECK
 //#define TO_DO
-//#define TO_DO2
+#define TO_DO2
 
-#define RANGE_BASED_FOR_ARRAY
-#define RANGE_BASED_FOR_LIST
+//#define RANGE_BASED_FOR_ARRAY
+//#define RANGE_BASED_FOR_LIST
 
 int main()
 {
@@ -359,13 +381,18 @@ int main()
 
 #ifdef TO_DO2
 
-	ForwardList list = { 3, 5, 8, 13, 21 }; //(ForwardList) = (initializer_list)
+	ForwardList list = { 3, 5, 3, 13, 3 }; //(ForwardList) = (initializer_list)
 	//list.print();
 	for (Iterator it = list.getHead(); it != nullptr; ++it)
 	{
 		cout << *it << tab; 
 	}
 	cout << endl;
+	list.unique();
+	for (Iterator it = list.getHead(); it != nullptr; ++it)
+	{
+		cout << *it << tab;
+	}
 
 #endif // TO_DO2
 
