@@ -1,6 +1,7 @@
 //Solution: DataContainers
-//Project:: ForwardList
+//Project:: TemplatedForwardList
 #include <iostream>
+#include <string>
 
 using namespace std;
 using std::cin;
@@ -10,13 +11,19 @@ using std::endl;
 #define DEBUG
 //#define POSTFIX_DEBUG
 
+template<typename T>class ForwardList;	//необходимо объявлять классы перед классом, использующим дружественные функции, чтобы избавиться
+template<typename T>class Iterator;		//от множественных ошибок после шаблонизации (так же это нужно сделать перед прототипами если они есть)
+
+template<typename T>
 class Element
 {
-	int Data; //значение элемента 
-	Element* pNext; //Адрес следующего элемента
+	T Data; //значение элемента 
+	Element<T>* pNext; //Адрес следующего элемента
+	//Element* - указатель на элемент
+	//Element<T>* - указатель на шаблонный элемент
 	static size_t count;
 public:
-	Element(int Data, Element* pNext = nullptr) : Data(Data), pNext(pNext)
+	Element(T Data, Element<T>* pNext = nullptr) : Data(Data), pNext(pNext)
 	{
 		++count;
 #ifdef DEBUG
@@ -33,17 +40,19 @@ public:
 
 	}
 
-	friend class ForwardList;
-	friend class Iterator;
+	friend class ForwardList<T>;
+	friend class Iterator<T>;
 };
 
-size_t Element::count = 0; //инициализируем переменную за классом.
+template<typename T>
+size_t Element<T>::count = 0; //инициализируем переменную за классом.
 
+template<typename T>
 class Iterator
 {
-	Element* Temp;
+	Element<T>* Temp;
 public:
-	Iterator(Element* Temp = nullptr) : Temp(Temp)
+	Iterator(Element<T>* Temp = nullptr) : Temp(Temp)
 	{
 		cout << "It constructor:\t" << this << endl;
 	}
@@ -52,36 +61,40 @@ public:
 		cout << "It destructor:\t" << this << endl;
 	}
 
-	Iterator& operator++() //Prefix increment
+	Iterator<T>& operator++() //Prefix increment
 	{
 		Temp = Temp->pNext;
 		return *this;
 	}
-	Iterator operator++(int) //Postfix increment
+	Iterator<T> operator++(int) //Postfix increment
 	{
 		Iterator old = *this;	//Сохраняем старое значение итератора
 		Temp = Temp->pNext;		//Изменяем итератор
 		return old;				//Возвращаем старое значение
 	}
-	bool operator==(const Iterator& other)const
+	bool operator==(const Iterator<T>& other)const
 	{
 		return this->Temp == other.Temp;
 	}
-	bool operator!=(const Iterator& other)const
+	bool operator!=(const Iterator<T>& other)const
 	{
 		return this->Temp != other.Temp;
 	}
 
-	const int& operator*()const
+	const T& operator*()const
 	{
 		return Temp->Data;
 	}
 
-	int& operator*()
+	T& operator*()
 	{
 		return Temp->Data;
 	}
 
+	operator bool()const
+	{
+		return Temp;
+	}
 
 #ifdef POSTFIX_DEBUG
 	friend std::ostream& operator<<(std::ostream& os, const Iterator& obj);
@@ -96,22 +109,23 @@ std::ostream& operator<<(std::ostream& os, const Iterator& obj)
 }
 #endif // POSTFIX_DEBUG
 
+template<typename T>
 class ForwardList //Односвязный (однонаправленный) список
 {
-	Element* Head; //Голова списка - указывает на начальный элемент списка
+	Element<T>* Head; //Голова списка - указывает на начальный элемент списка
 	size_t size; //Размер списка
 public:
-	Element* getHead()const
+	Element<T>* getHead()const
 	{
 		return Head;
 	}
 
-	Iterator begin()
+	Iterator<T> begin()
 	{
 		return Head;
 	}
 
-	Iterator end()
+	Iterator<T> end()
 	{
 		return nullptr;
 	}
@@ -128,12 +142,13 @@ public:
 		//this->size = 0;
 		for (int i = 0; i < size; ++i)
 		{
-			push_front(0);
+			push_front(T());
+			//T() - значение по-умолчанию для шаблонного типа.
 		}
 		cout << "LConstructor:\t" << this << endl;
 	}
 
-	ForwardList(const initializer_list<int>& il) : ForwardList()
+	ForwardList(const initializer_list<T>& il) : ForwardList()
 	{
 		//il.begin() - возвращает итератор на начало контейнера
 		//il.end() - возвращает итератор на конец контейнера
@@ -141,18 +156,28 @@ public:
 		//const int * - это константный указатель (НЕ изменяется адрес)
 		//int const * - это указатель на константу (НЕ изменяется значение по адресу)
 
-		//for (int const* it = il.begin(); it != il.end(); ++it)
+		//for (T const* it = il.begin(); it != il.end(); ++it)
 		//{
 		//	//it - iterator
 		//	push_back(*it);
 		//}
 
-		for (int const* it = il.end(); it != il.begin() - 1; --it) //<--- Этот вариант быстрее и функциональнее
+		for (T const* it = il.end() - 1; it != il.begin() - 1; --it) //<--- Этот вариант быстрее и функциональнее 
 		{
 			push_front(*it); 
 		}
 
 		cout << "LConstructor:\t" << this << endl;
+	}
+	ForwardList(const ForwardList<T>& other) : ForwardList()
+	{
+		//for (Element<T>* Temp = other.Head; Temp; Temp = Temp->pNext)
+		//{
+		//	push_back(Temp->Data);
+		//}
+		for (Iterator<T> it = other.Head; it != nullptr; it++)
+			push_back(*it);
+		cout << "CopyConstructor:\t" << this << endl;
 	}
 	~ForwardList()
 	{
@@ -161,39 +186,47 @@ public:
 	}
 
 	//			Operators:
-	const int& operator[](const int index)const //операторов квадратные скобки должно быть два вида: 1 позволяет изменять переменные члены класса, а 2й не позволяет.
+	ForwardList<T>& operator=(const ForwardList<T>& other)
 	{
-		Element* Temp = Head;
+		if (this == &other) return *this;
+		while (Head) pop_front(); //Очищаем этот список
+		for (Iterator<T> it = other.Head; it; ++it) //проходим по тому списку и вставляем  значения его элементов в этот список.
+			push_back(*it);
+		cout << "CopyAssignment:\t" << this << endl;
+	}
+	const T& operator[](const int index)const //операторов квадратные скобки должно быть два вида: 1 позволяет изменять переменные члены класса, а 2й не позволяет.
+	{
+		Element<T>* Temp = Head;
 		for (int i = 0; i < index; ++i) Temp = Temp->pNext;
 		return Temp->Data;
 	}
 
-	int& operator[](const int index)
+	T& operator[](const int index)
 	{
-		Element* Temp = Head;
+		Element<T>* Temp = Head;
 		for (int i = 0; i < index; ++i) Temp = Temp->pNext;
 		return Temp->Data;
 	}
 	//			Adding elements:
 
-	void push_front(int Data)
+	void push_front(T Data)
 	{
 		//Element* New = new Element(Data);//Создаем новфый элемент и помещаем в него значение Data.
 		//New->pNext = Head; //Привязываем новый элемент к началу списка
 		//Head = New; //Переводим Голову на новый элемент.
 
-		Head = new Element(Data, Head); //оптимизированная версия верхнего варианта.
+		Head = new Element<T>(Data, Head); //оптимизированная версия верхнего варианта.
 		++size;
 	}
 
-	void push_back(int Data)
+	void push_back(T Data)
 	{
 		//0) Проверяем, является ли список пустым:
 		if (Head == nullptr) return push_front(Data); //оказывается мы можем так писать, если вызываемая функция тоже возвращает void
 		//1) Создаем новый элемент
 		////Element* New = new Element(Data);
 		//2) Доходим до конца списка
-		Element* Temp = Head;
+		Element<T>* Temp = Head;
 		while (Temp->pNext) //Пока, pNext текущего элемента НЕ 0
 		{
 			Temp = Temp->pNext; //Переходим на следующий элемент
@@ -201,23 +234,23 @@ public:
 		//Теперь мы находимся в последнем элементе, то есть Temp->pNext == nullptr
 		//3) Присоединяем новый элемент к последнему
 		////Temp->pNext = New;
-		Temp->pNext = new Element(Data); //оптимизированная версия двух строчек кода с двойным комментированием (////)
+		Temp->pNext = new Element<T>(Data); //оптимизированная версия двух строчек кода с двойным комментированием (////)
 		++size;
 	}
 
-	void insert(int index, int Data)
+	void insert(int index, T Data)
 	{
 		if (index == 0 || Head == nullptr) return push_front(Data);
 		if (index == 0) return push_front(Data);
 		if (index > size) return;
 		////Element* New = new Element(Data);
 		//1) Доходим до нужного элемента:
-		Element* Temp = Head;
+		Element<T>* Temp = Head;
 		for (int i = 0; i < index - 1; ++i) Temp = Temp->pNext;
 		//2) Включаем новый элемент в список
 		////New->pNext = Temp->pNext;
 		////Temp->pNext = New;
-		Temp->pNext = new Element(Data, Temp->pNext); //оптимизированная версия трех строчек с двойным комментированием
+		Temp->pNext = new Element<T>(Data, Temp->pNext); //оптимизированная версия трех строчек с двойным комментированием
 		++size;
 	}
 	//			Removing elements:
@@ -225,7 +258,7 @@ public:
 	{
 		if (Head == nullptr) return;
 		//1) Запоминаем адрес удаляемого элемента
-		Element* Erased = Head;
+		Element<T>* Erased = Head;
 		//2) Исключаем удаляемый элемент из списка
 		Head = Erased->pNext; //можно еще Head = Head-pNext;
 		//3) Удаляем элемент из памяти
@@ -237,7 +270,7 @@ public:
 		if (Head == nullptr) return;
 		if (Head->pNext == nullptr) return pop_front();
 		//1) Доходим до ПРЕДпоследнего элемента
-		Element* Temp = Head;
+		Element<T>* Temp = Head;
 		while (Temp->pNext->pNext) Temp = Temp->pNext;
 		//2) Удаляем последний элемент из памяти
 		delete Temp->pNext;
@@ -251,12 +284,12 @@ public:
 		if (index > size) return;
 		if (index == 0) return pop_front();
 		//1) Доходим до нужного элемента
-		Element* Temp = Head; //Создаем итератор и заходим в список через голову.
+		Element<T>* Temp = Head; //Создаем итератор и заходим в список через голову.
 		//Теперь в Итераторе адрес головного элемента.
 		for (int i = 0; i < index - 1; ++i)
 			Temp = Temp->pNext;
 		//2) Запоминаем адрес удаляемого элемента
-		Element* Erased = Temp->pNext;
+		Element<T>* Erased = Temp->pNext;
 		//3) Исключаем элемент из списка:
 		Temp->pNext = Temp->pNext->pNext; //или Temp->pNext = Erased->pNext;
 		//4) Удаляем элемент из памяти:
@@ -277,7 +310,7 @@ public:
 		}
 #endif //OLD_PRINT
 
-		for (Element* Temp = Head; Temp; Temp = Temp->pNext)
+		for (Element<T>* Temp = Head; Temp; Temp = Temp->pNext)
 		//	cout << Temp << tab << Temp->Data << tab << Temp->pNext << endl;
 
 		//for (Element* Temp = Head; Temp; ++Temp)
@@ -286,14 +319,23 @@ public:
 		cout << "Count of elements in list:\t" << size << endl;
 		cout << "Common count of elements:\t" << Head->count << endl;
 	}
+	
+	void print_list(const ForwardList<T>& list)
+	{
+		for (size_t i = 0; i < list.get_size(); ++i)
+		{
+			cout << list[i] << tab;
+		}
+		cout << endl;
+	}
 
 	void unique() //мне не нравится моё решение, оно тяжеловесное, я уверен, что можно было бы это сделать гораздо легче.
 	{
 		size_t temp_s = 0; //почему-то я его не могу объявить в теле for в качестве еще одной перменной через запятую.
-		for (Element* Temp = Head; Temp->pNext; Temp = Temp->pNext, ++temp_s)
+		for (Element<T>* Temp = Head; Temp->pNext; Temp = Temp->pNext, ++temp_s)
 		{
 			size_t temp_s2 = temp_s + 1;
-			for (Element* Temp2 = Temp->pNext; Temp2; Temp2 = Temp2->pNext, ++temp_s2)
+			for (Element<T>* Temp2 = Temp->pNext; Temp2; Temp2 = Temp2->pNext, ++temp_s2)
 			{
 				if (Temp->Data == Temp2->Data)
 				{
@@ -392,15 +434,15 @@ int main()
 
 #ifdef TO_DO2
 
-	ForwardList list = { 3, 5, 3, 13, 3 }; //(ForwardList) = (initializer_list)
+	ForwardList<int> list = { 3, 5, 3, 13, 3 }; //(ForwardList) = (initializer_list)
 	//list.print();
-	for (Iterator it = list.getHead(); it != nullptr; ++it)
+	for (Iterator<int> it = list.getHead(); it != nullptr; ++it)
 	{
 		cout << *it << tab; 
 	}
 	cout << endl;
 	list.unique();
-	for (Iterator it = list.getHead(); it != nullptr; ++it)
+	for (Iterator<int> it = list.getHead(); it != nullptr; ++it)
 	{
 		cout << *it << tab;
 	}
@@ -426,7 +468,7 @@ int main()
 #endif // RANGE_BASED_FOR_ARRAY
 
 #ifdef RANGE_BASED_FOR_LIST
-	ForwardList list = { 3, 5, 8, 13, 21 };
+	ForwardList<int> list = { 3, 5, 8, 13, 21 };
 	for (int i : list)
 	{
 		cout << i << tab;
@@ -442,8 +484,40 @@ int main()
 	 value последовательно принимает значения всех элементов контейнера
 	 ------------------------------------------------------------
 	*/
+
+	ForwardList<double> d_list = { 2.5, 3.14, 5.2, 8.3 };
+	for (double i : d_list)
+		cout << i << tab;
+
+	cout << endl;
+
+	ForwardList<string> s_list = { "Have", "a", "nice",  "day." };
+	for (string i : s_list)
+		cout << i << tab;
+	
+	//ForwardList<string> s_list2 = s_list; //CopyConstructor
+	ForwardList<string> s_list2;
+	s_list2 = s_list; //CopyConstructor
+	for (string i : s_list2)
+		cout << i << tab;
+	cout << endl;
 #endif // RANGE_BASED_FOR_LIST
 
-	//Проблема: У меня почему-то выводит на 1 элемент больше при создании списка через передачу списка инициализации.
 	return 0;
 }
+
+//Синтаксис создания объекта:
+/*
+	Шаблонным называется класс, тип полей которого определяется при создании объекта.
+	То есть переменные члены класса могут быть абсолютно любого типа.
+	Но при создании объекта обязательно нужно указывать тип его полей.
+
+	Для того, чтобы сделать класс шаблонным перед ним нужно просто создать шаблон
+------------------------------------------------------------
+	Class object;		// создание объекта обычного класса
+	Class<type> object; // создаение объекта шаблонного класса 
+
+	template<typename T>	//После этого любая переменная в классе может быть шаблонного типа.
+							//А все методы реализованные внутри класса автоматически становятся шаблонными
+------------------------------------------------------------
+*/
