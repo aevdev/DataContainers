@@ -105,6 +105,17 @@ public:
 	{
 		return Head;
 	}
+
+	Iterator begin()
+	{
+		return Head;
+	}
+
+	Iterator end()
+	{
+		return nullptr;
+	}
+
 	ForwardList()
 	{
 		Head = nullptr; //≈сли голова указывает на 0, то список пуст.
@@ -302,10 +313,10 @@ public:
 //#define BASE_CHECK
 //#define DESTRUCTOR_CHECK
 //#define TO_DO
-#define TO_DO2
+//#define TO_DO2
 
 //#define RANGE_BASED_FOR_ARRAY
-//#define RANGE_BASED_FOR_LIST
+#define RANGE_BASED_FOR_LIST
 
 int main()
 {
@@ -421,8 +432,18 @@ int main()
 		cout << i << tab;
 	}
 	cout << endl;
+	//Range-based for
+	/*
+	 ------------------------------------------------------------
+	 for (value : container)
+	 {
+		cout << value;
+	 }
+	 value последовательно принимает значени€ всех элементов контейнера
+	 ------------------------------------------------------------
+	*/
 #endif // RANGE_BASED_FOR_LIST
 
-
+	//ѕроблема: ” мен€ почему-то выводит на 1 элемент больше при создании списка через передачу списка инициализации.
 	return 0;
 }
