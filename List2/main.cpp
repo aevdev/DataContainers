@@ -1,20 +1,21 @@
 #include <iostream>
+//#include<string> - это необязательно в 19й студии и далее, поскольку string подтягивается как-то через iostream
 #define tab '\t'
 using namespace std;
 using std::cin;
 using std::cout;
 using std::endl;
 
-
+template<typename T>
 class List
 {
 	class Element
 	{
-		int Data; //значение элемента
+		T Data; //значение элемента
 		Element* pNext; //адрес следующего элемента.
 		Element* pPrev; //адрес предыдущего элемента.
 	public:
-		Element(int Data, Element* pNext = nullptr, Element* pPrev = nullptr) : Data(Data), pNext(pNext), pPrev(pPrev)
+		Element(T Data, Element* pNext = nullptr, Element* pPrev = nullptr) : Data(Data), pNext(pNext), pPrev(pPrev)
 		{
 			cout << "EConstructor:\t" << this << endl;
 		}
@@ -22,7 +23,7 @@ class List
 		{
 			cout << "EDestructor:\t" << this << endl;
 		}
-		friend class List;
+		friend class List<T>;
 	}*Head, *Tail;//вместо этого можно было еще написать
 	/*
 	Element* Head;
@@ -37,11 +38,17 @@ class List
 	public:
 		BaseIterator(Element* Temp = nullptr) : Temp(Temp)
 		{
+#ifdef DEBUG
 			cout << "BItConstructor:\t" << this << endl;
+#endif // DEBUG
+
 		}
 		~BaseIterator()
 		{
+#ifdef DEBUG
 			cout << "BItDestructor:\t" << this << endl;
+#endif // DEBUG
+
 		}
 		virtual BaseIterator& operator++() = 0;
 		//virtual BaseIterator operator++(int) = 0;
@@ -56,7 +63,7 @@ class List
 		{
 			return this->Temp != other.Temp;
 		}
-		const int& operator*()const
+		const T& operator*()const
 		{
 			return Temp->Data;
 		}
@@ -72,33 +79,39 @@ public: //alt + стрелка вверх/вниз позволяет перемещать строку.
 	public:
 		ConstIterator(Element* Temp = nullptr) : BaseIterator(Temp)
 		{
+#ifdef DEBUG
 			cout << "CItConstrutor:\t" << this << endl;
+#endif // DEBUG
+
 		}
 		~ConstIterator()
 		{
+#ifdef DEBUG
 			cout << "CItDestructor:\t" << this << endl;
+#endif // DEBUG
+
 		}
 
 		ConstIterator& operator++()
 		{
-			Temp = Temp->pNext;
+			BaseIterator::Temp = BaseIterator::Temp->pNext;
 			return *this;
 		}
 		ConstIterator operator++(int)
 		{
 			ConstIterator old = *this;
-			Temp = Temp->pNext;
+			BaseIterator::Temp = BaseIterator::Temp->pNext;
 			return old;
 		} 
 		ConstIterator& operator--()
 		{
-			Temp = Temp->pPrev;
+			BaseIterator::Temp = BaseIterator::Temp->pPrev;
 			return *this;
 		}
 		ConstIterator operator--(int)
 		{
 			ConstIterator old = *this;
-			Temp = Temp->pPrev;
+			BaseIterator::Temp = BaseIterator::Temp->pPrev;
 			return old;
 		}
 	};
@@ -107,32 +120,38 @@ public: //alt + стрелка вверх/вниз позволяет перемещать строку.
 	public:
 		ConstReverseIterator(Element* Temp = nullptr) : BaseIterator(Temp)
 		{
+#ifdef DEBUG
 			cout << "RCItConstructor:\t" << this << endl;
+#endif // DEBUG
+
 		}
 		~ConstReverseIterator()
 		{
+#ifdef DEBUG
 			cout << "RCItDestructor:\t" << this << endl;
+#endif // DEBUG
+
  		}
 		ConstReverseIterator& operator++()
 		{
-			Temp = Temp->pPrev;
+			BaseIterator::Temp = BaseIterator::Temp->pPrev;
 			return *this;
 		}
 		ConstReverseIterator operator++(int)
 		{
 			ConstReverseIterator old = *this;
-			Temp = Temp->pPrev;
+			BaseIterator::Temp = BaseIterator::Temp->pPrev;
 			return old;
 		}
 		ConstReverseIterator& operator--()
 		{
-			Temp = Temp->pNext;
+			BaseIterator::Temp = BaseIterator::Temp->pNext;
 			return *this;
 		}
 		ConstReverseIterator operator--(int)
 		{
 			ConstReverseIterator old = *this;
-			Temp = Temp->pNext;
+			BaseIterator::Temp = BaseIterator::Temp->pNext;
 			return old;
 		}
 	};
@@ -142,15 +161,21 @@ public: //alt + стрелка вверх/вниз позволяет перемещать строку.
 	public:
 		Iterator(Element* Temp = nullptr) : ConstIterator(Temp)
 		{
+#ifdef DEBUG
 			cout << "ItConstructor:\t" << this << endl;
+#endif // DEBUG
+
 		}
 		~Iterator()
 		{
+#ifdef DEBUG
 			cout << "ItDestructor:\t" << this << endl;
+#endif // DEBUG
+
 		}
-		int& operator*()
+		T& operator*()
 		{
-			return Temp->Data;
+			return BaseIterator::Temp->Data;
 		}
 	};
 
@@ -159,15 +184,21 @@ public: //alt + стрелка вверх/вниз позволяет перемещать строку.
 	public:
 		ReverseIterator(Element* Temp = nullptr) : ConstReverseIterator(Temp)
 		{
+#ifdef DEBUG
 			cout << "RItConstructor:\t" << this << endl;
+#endif // DEBUG
+
 		}
 		~ReverseIterator()
 		{
+#ifdef DEBUG
 			cout << "RItDestructor:\t" << this << endl;
+#endif // DEBUG
+
 		}
-		int& operator*()
+		T& operator*()
 		{
-			return Temp->Data;
+			return BaseIterator::Temp->Data;
 		}
 	};
 
@@ -210,14 +241,14 @@ public: //alt + стрелка вверх/вниз позволяет перемещать строку.
 		size = 0;
 		cout << "LConstructor:\t" << this << endl;
 	}
-	List(const initializer_list<int>& il) : List()
+	List(const initializer_list<T>& il) : List()
 	{
 		//const int* p; - константный указатель
 		//int const* p; - указатель на конастанту
 		// const int const* p; - константный указатель на константу
 		//it - iterator
 		cout << typeid(il.begin()).name() << endl;
-		for (int const* it = il.begin(); it != il.end(); ++it)
+		for (T const* it = il.begin(); it != il.end(); ++it)
 		{
 			push_back(*it);
 		}
@@ -230,7 +261,7 @@ public: //alt + стрелка вверх/вниз позволяет перемещать строку.
 	}
 
 	//Adding elements:
-	void push_front(int Data)
+	void push_front(T Data)
 	{
 		if (Head == nullptr && Tail == nullptr)
 		{
@@ -248,7 +279,7 @@ public: //alt + стрелка вверх/вниз позволяет перемещать строку.
 		++size;
 	}
 
-	void push_back(int Data)
+	void push_back(T Data)
 	{
 		if (Head == nullptr && Tail == nullptr)
 		{
@@ -266,7 +297,7 @@ public: //alt + стрелка вверх/вниз позволяет перемещать строку.
 		++size;
 	}
 
-	void insert(int index, int Data)
+	void insert(int index, T Data)
 	{
 		if (index > size) return;
 		if (index == 0) return push_front(Data);
@@ -327,6 +358,7 @@ public: //alt + стрелка вверх/вниз позволяет перемещать строку.
 		--size;
 	}
 
+	//			Methods:
 	void print()const
 	{
 		for (Element* Temp = Head; Temp; Temp = Temp->pNext)
@@ -341,6 +373,7 @@ public: //alt + стрелка вверх/вниз позволяет перемещать строку.
 		cout << "Count of elements in list: " << size << endl;
 	}			
 };
+
 
 //#define BASE_CHECK
 //#define RANGE_BASED_FOR_ARRAY
@@ -385,19 +418,32 @@ int main()
 #endif // RANGE_BASED_FOR_ARRAY
 
 #ifdef RANGE_BASED_FOR_LIST
-	List list = { 3, 5, 8, 13, 21 };
+	List<int> list = { 3, 5, 8, 13, 21 };
 	list.print();
 	for (int i : list)
 	{
 		cout << i << tab;
 	}
-	for (List::ConstReverseIterator it = list.crbegin(); it; ++it)
+	for (List<int>::ConstReverseIterator it = list.crbegin(); it; ++it)
 	{
 		cout << *it << tab;
 	}
 	cout << endl;
 #endif // RANGE_BASED_FOR_LIST
+	List<double> d_list = { 2.5, 3.14, 5.2, 8.3 };
+	for (double i : d_list) 
+		cout << i << tab; cout << endl;
+	for (List<double>::ReverseIterator it = d_list.rbegin(); it; ++it)
+	{
+		cout << *it << tab;
+	}
 
-	
+	List<std::string> s_list = { "Have", "a" ,"nice", "day" };
+	for (std::string i : s_list)
+		cout << i << tab;
+	cout << endl;
+	for (List<std::string>::ReverseIterator it = s_list.rbegin(); it != s_list.rend(); ++it)
+		cout << *it << tab;
+	cout << endl;
 	return 0;
 }
